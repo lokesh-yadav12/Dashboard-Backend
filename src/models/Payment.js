@@ -62,6 +62,10 @@ const paymentSchema = new mongoose.Schema({
     enum: ['Bank Transfer', 'Credit Card', 'Cash', 'Check', 'Other'],
     default: 'Bank Transfer'
   },
+  invoiceDocument: {
+    type: String,
+    trim: true
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

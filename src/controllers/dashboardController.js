@@ -33,7 +33,7 @@ exports.getStats = async (req, res, next) => {
       },
       revenue: {
         value: totalRevenue,
-        formatted: `$${(totalRevenue / 1000).toFixed(1)}K`,
+        formatted: `₹${(totalRevenue / 1000).toFixed(1)}K`,
         change: '+15%'
       },
       teamMembers: {

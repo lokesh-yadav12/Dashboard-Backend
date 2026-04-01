@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const teamMemberSchema = new mongoose.Schema({
+  employeeId: {
+    type: String,
+    required: [true, 'Please provide employee ID'],
+    unique: true,
+    trim: true
+  },
   name: {
     type: String,
     required: [true, 'Please provide name'],
@@ -64,6 +70,22 @@ const teamMemberSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  bio: {
+    type: String,
+    trim: true
+  },
+  highestQualification: {
+    type: String,
+    trim: true
+  },
+  qualificationDocument: {
+    type: String,
+    trim: true
+  },
+  profileImage: {
+    type: String,
+    trim: true
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -74,8 +96,9 @@ const teamMemberSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-teamMemberSchema.index({ name: 'text', email: 'text', role: 'text' });
+teamMemberSchema.index({ name: 'text', email: 'text', role: 'text', employeeId: 'text' });
 teamMemberSchema.index({ userId: 1, joinDate: -1 });
+teamMemberSchema.index({ employeeId: 1 });
 
 // Generate avatar from name if not provided
 teamMemberSchema.pre('save', function(next) {

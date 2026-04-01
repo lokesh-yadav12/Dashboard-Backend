@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const fileUpload = require('express-fileupload');
+const path = require('path');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const rateLimiter = require('./middleware/rateLimiter');
@@ -27,6 +29,17 @@ app.use(cors({
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// File upload middleware
+app.use(fileUpload({
+  createParentPath: true,
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  },
+}));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Compression middleware
 app.use(compression());
@@ -54,6 +67,7 @@ app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/team', require('./routes/teamRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
 
 // 404 handler
 app.use((req, res) => {

@@ -1,5 +1,29 @@
 const mongoose = require('mongoose');
 
+const meetingNoteSchema = new mongoose.Schema({
+  date: {
+    type: Date,
+    required: true
+  },
+  note: {
+    type: String,
+    required: true,
+    trim: true
+  }
+}, { _id: true });
+
+const clientPaymentSchema = new mongoose.Schema({
+  amount: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  date: {
+    type: Date,
+    required: true
+  }
+}, { _id: true });
+
 const clientSchema = new mongoose.Schema({
   clientName: {
     type: String,
@@ -9,6 +33,16 @@ const clientSchema = new mongoose.Schema({
   projectName: {
     type: String,
     required: [true, 'Please provide project name'],
+    trim: true
+  },
+  projectBoughtBy: {
+    type: String,
+    required: [true, 'Please provide project bought by'],
+    trim: true
+  },
+  gstnNumber: {
+    type: String,
+    required: [true, 'Please provide GSTN number'],
     trim: true
   },
   email: {
@@ -44,9 +78,22 @@ const clientSchema = new mongoose.Schema({
     type: String,
     default: 'No payment yet'
   },
+  payments: [clientPaymentSchema],
   lastMeetNote: {
     type: String,
     default: 'Initial meeting scheduled'
+  },
+  meetingNotes: [meetingNoteSchema],
+  maintenanceStartDate: {
+    type: Date
+  },
+  document: {
+    type: String,
+    trim: true
+  },
+  signedDocument: {
+    type: String,
+    trim: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

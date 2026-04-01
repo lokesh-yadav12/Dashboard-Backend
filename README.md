@@ -317,5 +317,4 @@ Your Name
 
 ## 🆘 Support
 
-For support, email your-email@example.com or create an issue in the repository.#   D a s h b o a r d - B a c k e n d  
- 
+For support, email your-email@example.com or create an issue in the repository.
