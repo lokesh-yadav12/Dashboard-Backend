@@ -5,7 +5,8 @@ const {
   uploadFile,
   downloadFile,
   viewFile,
-  deleteFile
+  deleteFile,
+  getSignedUrl
 } = require('../controllers/uploadController');
 
 // Temporarily remove protect middleware for testing
@@ -14,5 +15,6 @@ router.post('/', uploadFile);
 router.get('/download/:type/:filename', downloadFile);
 router.get('/view/:type/:filename', viewFile);
 router.delete('/:type/:filename', deleteFile);
+router.get('/signed-url/:type/:filename', getSignedUrl);
 
 module.exports = router;

@@ -63,6 +63,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/otp-auth', require('./routes/otpAuth')); // OTP-based authentication
 app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/team', require('./routes/teamRoutes'));
