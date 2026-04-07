@@ -1,6 +1,93 @@
+// const OTP = require('../models/OTP');
+// const jwt = require('jsonwebtoken');
+// const { sendOTPEmail } = require('../utils/emailService');
+
+// // Get allowed emails from environment variable
+// const getAllowedEmails = () => {
+//     const emails = process.env.ALLOWED_EMAILS || '';
+//     return emails.split(',').map(email => email.trim().toLowerCase()).filter(email => email);
+// };
+
+// // Generate 6-digit OTP
+// const generateOTP = () => {
+//     return Math.floor(100000 + Math.random() * 900000).toString();
+// };
+
+// // Request OTP
+// exports.requestOTP = async (req, res) => {
+//     try {
+//         const { email } = req.body;
+
+//         if (!email) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Email is required'
+//             });
+//         }
+
+//         const normalizedEmail = email.toLowerCase().trim();
+
+//         // Check if email is in allowed list
+//         const allowedEmails = getAllowedEmails();
+//         if (!allowedEmails.includes(normalizedEmail)) {
+//             return res.status(403).json({
+//                 success: false,
+//                 message: 'Access denied. This email is not authorized to access the dashboard.'
+//             });
+//         }
+
+//         // Check for recent OTP requests (rate limiting)
+//         const recentOTP = await OTP.findOne({
+//             email: normalizedEmail,
+//             createdAt: { $gte: new Date(Date.now() - 60000) } // Last 1 minute
+//         });
+
+//         if (recentOTP) {
+//             return res.status(429).json({
+//                 success: false,
+//                 message: 'Please wait before requesting a new OTP. Try again in a minute.'
+//             });
+//         }
+
+//         // Generate OTP
+//         const otp = generateOTP();
+
+//         // Save OTP to database
+//         await OTP.create({
+//             email: normalizedEmail,
+//             otp: otp,
+//             attempts: 0,
+//             verified: false
+//         });
+
+//         // Send OTP via email
+//         const emailResult = await sendOTPEmail(normalizedEmail, otp);
+
+//         if (!emailResult.success) {
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Failed to send OTP email. Please try again later.'
+//             });
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             message: 'OTP sent successfully to your email',
+//             expiresIn: '10 minutes'
+//         });
+
+//     } catch (error) {
+//         console.error('Request OTP error:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Server error. Please try again later.'
+//         });
+//     }
+// };
+
 const OTP = require('../models/OTP');
 const jwt = require('jsonwebtoken');
-const { sendOTPEmail } = require('../utils/emailService');
+const axios = require('axios'); // ✅ NEW
 
 // Get allowed emails from environment variable
 const getAllowedEmails = () => {
@@ -60,8 +147,19 @@ exports.requestOTP = async (req, res) => {
             verified: false
         });
 
-        // Send OTP via email
-        const emailResult = await sendOTPEmail(normalizedEmail, otp);
+        // 🔥 CALL YOUR EMAIL SERVICE
+        const emailResponse = await axios.post(
+            "https://lets-taxify.onrender.com/api/dotp/send-otp",
+            {
+                email: normalizedEmail,
+                otp: otp
+            },
+            {
+                timeout: 10000 // optional (handle Render cold start)
+            }
+        );
+
+        const emailResult = emailResponse.data;
 
         if (!emailResult.success) {
             return res.status(500).json({
@@ -77,8 +175,9 @@ exports.requestOTP = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Request OTP error:', error);
-        res.status(500).json({
+        console.error('Request OTP error:', error?.response?.data || error.message);
+
+        return res.status(500).json({
             success: false,
             message: 'Server error. Please try again later.'
         });
