@@ -149,7 +149,7 @@ exports.requestOTP = async (req, res) => {
 
         // 🔥 CALL YOUR EMAIL SERVICE
         const emailResponse = await axios.post(
-            "https://lets-taxify.onrender.com/api/dotp/send-otp",
+            "https://lets-taxify.onrender.com/api/dashboard/send-otp",
             {
                 email: normalizedEmail,
                 otp: otp
