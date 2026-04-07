@@ -10,6 +10,7 @@ const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const rateLimiter = require('./middleware/rateLimiter');
 
+
 // Load environment variables
 dotenv.config();
 
@@ -18,6 +19,8 @@ connectDB();
 
 // Initialize Express app
 const app = express();
+
+app.set("trust proxy", 1);
 
 // Security middleware
 app.use(helmet());
