@@ -87,7 +87,7 @@
 
 const OTP = require('../models/OTP');
 const jwt = require('jsonwebtoken');
-const axios = require('axios'); // ✅ NEW
+const axios = require('axios');
 
 // Get allowed emails from environment variable
 const getAllowedEmails = () => {
@@ -102,10 +102,15 @@ const generateOTP = () => {
 
 // Request OTP
 exports.requestOTP = async (req, res) => {
+    const startTime = Date.now();
+
     try {
         const { email } = req.body;
+        console.log(`[OTP_REQUEST] Incoming request for email: ${email}`);
 
+        // 🔴 Missing email
         if (!email) {
+            console.warn(`[OTP_REQUEST][FAIL] Missing email in request`);
             return res.status(400).json({
                 success: false,
                 message: 'Email is required'
@@ -113,23 +118,28 @@ exports.requestOTP = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+        console.log(`[OTP_REQUEST] Normalized email: ${normalizedEmail}`);
 
-        // Check if email is in allowed list
+        // 🔴 Not in allowed list
         const allowedEmails = getAllowedEmails();
+        console.log(`[OTP_REQUEST] Allowed emails count: ${allowedEmails.length}`);
+
         if (!allowedEmails.includes(normalizedEmail)) {
+            console.warn(`[OTP_REQUEST][FAIL] Unauthorized email attempt: ${normalizedEmail}`);
             return res.status(403).json({
                 success: false,
                 message: 'Access denied. This email is not authorized to access the dashboard.'
             });
         }
 
-        // Check for recent OTP requests (rate limiting)
+        // 🔴 Rate limit check
         const recentOTP = await OTP.findOne({
             email: normalizedEmail,
-            createdAt: { $gte: new Date(Date.now() - 60000) } // Last 1 minute
+            createdAt: { $gte: new Date(Date.now() - 60000) }
         });
 
         if (recentOTP) {
+            console.warn(`[OTP_REQUEST][RATE_LIMIT] OTP requested too soon for ${normalizedEmail}`);
             return res.status(429).json({
                 success: false,
                 message: 'Please wait before requesting a new OTP. Try again in a minute.'
@@ -138,35 +148,61 @@ exports.requestOTP = async (req, res) => {
 
         // Generate OTP
         const otp = generateOTP();
+        console.log(`[OTP_REQUEST] OTP generated for ${normalizedEmail}`);
 
-        // Save OTP to database
-        await OTP.create({
+        // Save OTP
+        const savedOTP = await OTP.create({
             email: normalizedEmail,
             otp: otp,
             attempts: 0,
             verified: false
         });
 
-        // 🔥 CALL YOUR EMAIL SERVICE
-        const emailResponse = await axios.post(
-            "https://lets-taxify.onrender.com/api/dashboard/send-otp",
-            {
-                email: normalizedEmail,
-                otp: otp
-            },
-            {
-                timeout: 10000 // optional (handle Render cold start)
-            }
-        );
+        console.log(`[OTP_REQUEST] OTP saved in DB with id: ${savedOTP._id}`);
+
+        // 🔴 Email service call
+        console.log(`[OTP_REQUEST] Sending OTP via email service...`);
+
+        let emailResponse;
+        try {
+            emailResponse = await axios.post(
+                "https://lets-taxify.onrender.com/api/dashboard/send-otp",
+                {
+                    email: normalizedEmail,
+                    otp: otp
+                },
+                {
+                    timeout: 10000
+                }
+            );
+        } catch (apiError) {
+            console.error(`[OTP_REQUEST][EMAIL_API_FAIL] Failed to call email service`);
+            console.error({
+                message: apiError.message,
+                status: apiError.response?.status,
+                data: apiError.response?.data,
+                stack: apiError.stack
+            });
+
+            return res.status(500).json({
+                success: false,
+                message: 'Email service unavailable. Please try again later.'
+            });
+        }
 
         const emailResult = emailResponse.data;
 
+        // 🔴 Email service responded but failed
         if (!emailResult.success) {
+            console.error(`[OTP_REQUEST][EMAIL_FAIL] Email service responded with failure`, emailResult);
+
             return res.status(500).json({
                 success: false,
                 message: 'Failed to send OTP email. Please try again later.'
             });
         }
+
+        console.log(`[OTP_REQUEST][SUCCESS] OTP sent successfully to ${normalizedEmail}`);
 
         res.status(200).json({
             success: true,
@@ -175,12 +211,20 @@ exports.requestOTP = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Request OTP error:', error?.response?.data || error.message);
+        console.error(`[OTP_REQUEST][CRITICAL_ERROR] Unexpected server error`);
+        console.error({
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data
+        });
 
         return res.status(500).json({
             success: false,
             message: 'Server error. Please try again later.'
         });
+    } finally {
+        const duration = Date.now() - startTime;
+        console.log(`[OTP_REQUEST] Completed in ${duration}ms`);
     }
 };
 
