@@ -91,7 +91,7 @@ const axios = require('axios');
 
 // Get allowed emails from environment variable
 const getAllowedEmails = () => {
-    const emails = 'Mradul.gangle001@gmail.com';
+    const emails = 'lokesh916635@gmail.com';
     return emails.split(',').map(email => email.trim().toLowerCase()).filter(email => email);
 };
 
